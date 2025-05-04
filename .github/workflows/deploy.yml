@@ -63,6 +63,23 @@ jobs:
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
 
-    - name: Verify Deployment
+    - name: Wait for Deployment rollout to complete
       run: |
         kubectl rollout status deployment/hello-world-deployment
+        kubectl get pods
+
+    - name: Get logs of the pods
+      run: |
+        PODS=$(kubectl get pods -l app=hello-world -o jsonpath='{.items[*].metadata.name}')
+        for POD in $PODS; do
+          echo "Logs for pod $POD:"
+          kubectl logs $POD
+        done
+
+    - name: Describe Deployment
+      run: |
+        kubectl describe deployment hello-world-deployment
+
+    - name: Check Services
+      run: |
+        kubectl get services
