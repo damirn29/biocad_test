@@ -63,5 +63,5 @@ jobs:
       - name: Deploy application
         run: |
           kubectl apply -f k8s/
-          kubectl get pods -w --timeout=120s  # Ожидание запуска подов
+          kubectl get pods -w
           minikube service hello-world-service --url || echo "Service URL may not be available in CI"
