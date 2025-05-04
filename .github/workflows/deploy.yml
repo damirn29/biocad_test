@@ -47,7 +47,9 @@ jobs:
       - name: Configure Kubernetes access
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          cat <<EOF > ~/.kube/config
+          ${{ secrets.KUBECONFIG }}
+          EOF
           chmod 600 ~/.kube/config
 
       - name: Deploy to Kubernetes
