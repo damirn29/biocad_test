@@ -37,25 +37,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y conntrack
+
       - name: Install Minikube
         run: |
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
           minikube version
 
+      - name: Configure Docker permissions
+        run: sudo usermod -aG docker $USER && newgrp docker
+
       - name: Start Minikube cluster
         run: |
-          sudo minikube start --driver=docker --kubernetes-version=v1.26.0
-          sudo chmod -R 777 $HOME/.kube
+          minikube start --driver=docker --kubernetes-version=v1.26.0
           minikube update-context
+          chmod -R 755 $HOME/.kube
 
-      - name: Configure kubectl
+      - name: Verify cluster
         run: |
-          mkdir -p $HOME/.kube
-          minikube kubectl -- config view --flatten > $HOME/.kube/config
-          kubectl config use-context minikube
           kubectl cluster-info
           kubectl get nodes
+          minikube status
 
       - name: Deploy application
         run: |
