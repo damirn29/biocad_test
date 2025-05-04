@@ -1,8 +1,8 @@
 name: Build, Push and Deploy
 on:
   push:
-    branches: [ "main" ]    # Триггер на пуши в ветку main
-  pull_request:              # Опционально: запуск тестов для PR
+    branches: [ "main" ]
+  pull_request:
     branches: [ "main" ]
 
 env:
@@ -11,7 +11,6 @@ env:
   TAG: latest
 
 jobs:
-  # Job 1: Сборка и публикация Docker-образа
   build-and-push:
     runs-on: ubuntu-latest
     steps:
@@ -31,26 +30,37 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
-  # Job 2: Деплой в Kubernetes
   deploy-to-cluster:
-    needs: build-and-push    # Зависит от успешной сборки
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Install Minikube
+        uses: manusa/actions-setup-minikube@v2
         with:
-          version: 'latest'
+          minikube version: 'latest'
+          kubernetes version: 'v1.26.0'
+          driver: docker
+          container-runtime: containerd
 
-      - name: Configure Kubernetes access
+      - name: Configure kubectl
         run: |
-          mkdir -p ~/.kube
-          cat <<EOF > ~/.kube/config
-          ${{ secrets.KUBECONFIG }}
-          EOF
-          chmod 600 ~/.kube/config
+          mkdir -p $HOME/.kube
+          minikube kubectl -- config view --flatten > $HOME/.kube/config
+          kubectl config use-context minikube
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Validate manifests
+        run: kubectl apply -f k8s/ --dry-run=client
 
       - name: Deploy to Kubernetes
-        run: kubectl apply -f k8s/ --validate=false
+        run: kubectl apply -f k8s/
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -o wide
+          kubectl get svc
+          minikube service list
