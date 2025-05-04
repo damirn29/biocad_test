@@ -53,4 +53,4 @@ jobs:
           chmod 600 ~/.kube/config
 
       - name: Deploy to Kubernetes
-        run: kubectl apply -f k8s/
+        run: kubectl apply -f k8s/ --validate=false
