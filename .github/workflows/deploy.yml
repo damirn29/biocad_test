@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-app
+  IMAGE_NAME: your-dockerhub-username/hello-world-app  # ← Замените на ваш логин!
   TAG: latest
 
 jobs:
@@ -48,9 +48,6 @@ jobs:
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
           minikube version
 
-      - name: Configure Docker permissions
-        run: sudo usermod -aG docker $USER && newgrp docker
-
       - name: Start Minikube cluster
         run: |
           minikube start --driver=docker --kubernetes-version=v1.26.0
@@ -66,6 +63,5 @@ jobs:
       - name: Deploy application
         run: |
           kubectl apply -f k8s/
-          kubectl get pods -o wide
-          kubectl get svc
-          minikube service list --url
+          kubectl get pods -w --timeout=120s  # Ожидание запуска подов
+          minikube service hello-world-service --url || echo "Service URL may not be available in CI"
